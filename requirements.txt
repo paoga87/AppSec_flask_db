@@ -11,3 +11,4 @@ tox==3.14.0
 tox-travis==0.12
 WTForms==2.2.1
 passlib==1.7.1
+flask_talisman
