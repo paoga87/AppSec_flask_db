@@ -1,16 +1,25 @@
-#!/usr/bin/env python
 import os
 import subprocess
 import json
+import re
 from subprocess import Popen, PIPE, check_output
 from flask import Flask, render_template, redirect, url_for, session, request
 from flask_wtf.csrf import CSRFProtect
 from flask_talisman import Talisman
 from passlib.hash import sha256_crypt
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
+cpath = os.getcwd()
+app_db_file = "sqlite:///{}".format(os.path.join(cpath, "app_db.db"))
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'WxND4o83j4K4iO3762'
+app.secret_key = 'WxND4o83j4K4iO3762'
+
+#App DB Setup
+app.config["SQLALCHEMY_DATABASE_URI"] = app_db_file
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
 
 #Initialize csrf token
 csrf = CSRFProtect(app)
@@ -18,9 +27,45 @@ csrf = CSRFProtect(app)
 #Initialize Talisman
 Talisman(app, force_https=False, strict_transport_security=False, session_cookie_secure=False)
 
-#Users file
-Users = {}
+#User Models for the DB
+class User(db.Model):
+    __tablename__ = 'users'
+    username = db.Column(db.String(20), unique = True, nullable = False, primary_key = True)
+    password = db.Column(db.String(86), nullable = False)
+    twofa = db.Column(db.String(11), nullable = False)
+    role = db.Column(db.String(6), nullable = False)
 
+    def __repr__(self):
+        return "<User %r %r %r %r>" % (self.username, self.password, self.twofa, self.role)
+
+class LoginHistory(db.Model):
+    __tablename__ = 'history'
+    lid = db.Column(db.Integer, nullable = False, autoincrement = True, primary_key = True) 
+    lintime = db.Column(db.DateTime, nullable = False)
+    louttime = db.Column(db.DateTime, nullable = False)
+    username = db.Column(db.String(20), nullable = False)
+
+    def __repr__(self):
+        return "<LoginHistory %r %r %r %r>" % (self.lid, self.lintime, self.louttime, self.username)
+
+class QueryHistory(db.Model):
+    __tablename__ = 'queries'
+    qid = db.Column(db.Integer, nullable = False, autoincrement = True, primary_key = True) 
+    qtext = db.Column(db.String(3000), nullable = False)
+    qresult = db.Column(db.String(3000), nullable = False)
+    username = db.Column(db.String(20), nullable = False)
+
+    def __repr__(self):
+        return "<QueryHistory %r %r %r %r>" % (self.qid, self.qtext, self.qresult, self.username)
+
+#Create DB
+db.create_all()
+
+#Admin: expected account details - filter
+if (User.query.filter_by(username = "admin").count() == 0):
+    admin_account = User (username = "admin", password = sha256_crypt.using(rounds = 324333).hash("Administrator@1"), twofa = "12345678901", role ="admin")
+    db.session.add(admin_account)
+    db.session.commit()
 
 @app.route('/')
 def index():
@@ -74,7 +119,6 @@ def login():
 @app.route('/spell_check', methods=['GET', 'POST'])
 def spell():
     if(session.get('logged_in') == True): 
-        cpath = os.getcwd()
         if request.method == 'POST':
             outputtext = request.form ['inputtext']
             textfile = open("./static/text.txt", "w")
