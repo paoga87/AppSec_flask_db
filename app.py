@@ -185,11 +185,63 @@ def logout():
     # Variables for class LoginHistory: lintime, louttime, username
     currentLog= LoginHistory.query.filter_by(lintime = currentLoginTime, username = session['user']).first()
     currentLog.logoutTime = timestamp
-    db.session.add(currentlog)
+    db.session.add(ccurrentLog)
     db.session.commit()
     
     session.clear()
     return redirect(url_for('index'))
+
+@app.route('/history', methods = ['POST', 'GET'])
+def history():
+    if session.get('logged_in') == True:
+        if session['role'] == 'admin':
+            admin = True
+
+            if request.method == 'GET':
+                queries = QueryHistory.query.order_by(QueryHistory.qid)
+            if request.method == 'POST':
+                search_user = request.form['userquery'].lower() #make sure I have userquery within the form!!!
+                queries = QueryHistory.query.filter_by(username = search_user).order_by(QueryHistory.qid)
+        else:
+            queries = QueryHistory.query.filter_by(username = session['user']).order_by(QueryHistory.qid)
+            admin = False
+        
+        qCount = queries.count()
+        return render_template('queryhistory.html', queries = queries, queriesCount = qCount, admin = admin)
+
+    else:
+        return redirect(url_for('login'))
+
+@app.route('/history/query<id>')
+def query(id):
+    if session.get('logged_in') == True:
+
+        if session['role'] == 'admin':
+            query = QueryHistory.query.filter_by(qid = id).first() 
+            admin = True
+        else:
+            query = QueryHistory.query.filter_by(qid = id, username = session['user']).first()
+            admin = False     
+
+        return render_template('queryview.html', query = query, admin = admin)
+
+    else:
+        return redirect(url_for('login'))
+
+@app.route('/login_history', methods =['POST','GET'])
+def login_history():
+    if session.get('logged_in') == True and session['role'] == 'admin':
+
+        admin = True
+        if request.method =='GET':
+            queries = LoginHistory.query.order_by(LoginHistory.lid)
+        if request.method =='POST':
+            search_user = request.form['userid'].lower()
+            queries = LoginHistory.query.filter_by(username = search_user).order_by(LoginHistory.lid)       
+        return render_template('login_history.html', queries = queries, admin = admin)
+
+    else:
+        return redirect(url_for('spell_check'))
 
 
 if __name__ == '__main__':
