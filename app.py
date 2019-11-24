@@ -33,7 +33,7 @@ class User(db.Model):
     username = db.Column(db.String(20), unique = True, nullable = False, primary_key = True)
     password = db.Column(db.String(86), nullable = False)
     twofa = db.Column(db.String(11), nullable = False)
-    role = db.Column(db.String(6), nullable = False)
+    role = db.Column(db.String(6), nullable = True)
 
     def __repr__(self):
         return "<User %r %r %r %r>" % (self.username, self.password, self.twofa, self.role)
