@@ -74,41 +74,68 @@ def index():
 @app.route('/register', methods=['GET','POST'])
 def register():
     if request.method == 'POST':
+        success = ""
         username = request.form['uname'].lower()
-        if (username in Users.keys()):
+        password = request.form['pword']
+        twofa = request.form['2fa']
+
+        user = User.query.filter_by(username = username).first()
+
+        if (user is not None):
             success = "failure"
         else:
-            password = sha256_crypt.hash(request.form['pword'])
-            twofa = request.form['2fa']
-            Users[username] = {'password': password, '2fa': twofa}
+            password = sha256_crypt.using(rounds=324333).hash(password)
+            user = User(username = username, password = password, twofa = twofa)
+
+            db.session.add(user)
+            db.session.commit()
             success = "success"
-            user_file = open("./static/users.txt", "w")
-            user_file.write(json.dumps(Users))
-            user_file.close()
 
         return render_template ("register.html", success = success)
     
     if request.method == 'GET':
+        session.clear()
         success = "Please register to access the site"
         return render_template("register.html", success = success)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # Initialize admin user as false
+    admin = False
     if request.method == 'POST':
+        result = ""
         username = request.form['uname'].lower()
-        if (username in Users.keys()):
-            password = request.form['pword']
-            twofa = request.form['2fa']
-            if sha256_crypt.verify(password, Users[username]['password']):
-                if (Users[username]['2fa'] == twofa):
-                    session['logged_in'] = True
-                    result = "success"
+        password = request.form['pword']
+        twofa = request.form['2fa']
+
+        user = User.query.filter_by(username = username).first()
+
+        # Input validation
+        if (re.match (r"^((?!(<script(\s|\S)*?<\/script>)|(<style(\s|\S)*?<\/style>)|(<!--(\s|\S)*?-->)|(<\/?(\s|\S)*?>)).)*$",username) and re.match(r"^((?!(<script(\s|\S)*?<\/script>)|(<style(\s|\S)*?<\/style>)|(<!--(\s|\S)*?-->)|(<\/?(\s|\S)*?>)).)*$",password) and (True if (twofa == "") else re.match(r"^((?!(<script(\s|\S)*?<\/script>)|(<style(\s|\S)*?<\/style>)|(<!--(\s|\S)*?-->)|(<\/?(\s|\S)*?>)).)*$",twofa))):
+            if (user is not None):
+                # If user exists, did the user enter a valid password?
+                if sha256_crypt.verify(password, user.password):
+                    if (user.twofa == twofa):
+                        timestamp = datetime.utcnow()
+
+                        session['logged_in'] = True
+                        session['user'] = username
+                        session['lintime'] = timestamp.isoformat()
+                        session['role'] = user.role
+
+                        # Variables for class LoginHistory: lintime, louttime, username
+                        log = LoginHistory(username = username, lintime = timestamp)
+                        db.session.add(log)
+                        db.session.commit()
+                        result = "success"
+                    else:
+                        result = "Two-factor failure"
                 else:
-                    result = "Two-factor failure"
+                    result = "Incorrect"
             else:
-                result = "Incorrect password"
+                result = "Incorrect"
         else:
-            result = "Incorrect username"
+             result = "Incorrect username, password, or 2FA format. Please make sure the format meets the requirements before proceeding."    
         
         return render_template('login.html', result = result)
 
@@ -119,6 +146,13 @@ def login():
 @app.route('/spell_check', methods=['GET', 'POST'])
 def spell():
     if(session.get('logged_in') == True): 
+        if (session['role']) == 'admin':
+            admin = True
+        else:
+            admin = False
+
+        cpath = os.getcwd()
+
         if request.method == 'POST':
             outputtext = request.form ['inputtext']
             textfile = open("./static/text.txt", "w")
@@ -127,10 +161,16 @@ def spell():
 
             tmp = subprocess.check_output([cpath + '/static/a.out', cpath + '/static/text.txt', cpath + '/static/wordlist.txt']).decode('utf-8')
             misspelled = tmp.replace("\n",", ")[:-2]
+
+            # Variables for class QueryHistory: qtext, qresult, username
+            queryLog = QueryHistory(qtext = outputtext, qresult = misspelled, username = session['user'])
+            db.session.add(queryLog)
+            db.session.commit()
+
             return render_template("spell_check.html", misspelled = misspelled, outputtext = outputtext)
 
         if request.method == 'GET':
-            return render_template("spell_check.html")
+            return render_template("spell_check.html", admin = admin)
 
     else:
         return redirect(url_for('login'))
@@ -139,7 +179,16 @@ def spell():
 
 @app.route('/logout')
 def logout():
-    session.pop('logged_in', None)
+    timestamp = datetime.utcnow()
+    currentLoginTime = datetime.strptime(session['loginTime'], '%Y-%m-%dT%H:%M:%S.%f')
+    
+    # Variables for class LoginHistory: lintime, louttime, username
+    currentLog= LoginHistory.query.filter_by(lintime = currentLoginTime, username = session['user']).first()
+    currentLog.logoutTime = timestamp
+    db.session.add(currentlog)
+    db.session.commit()
+    
+    session.clear()
     return redirect(url_for('index'))
 
 
