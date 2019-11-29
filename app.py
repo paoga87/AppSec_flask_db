@@ -42,7 +42,7 @@ class LoginHistory(db.Model):
     __tablename__ = 'history'
     lid = db.Column(db.Integer, nullable = False, autoincrement = True, primary_key = True) 
     lintime = db.Column(db.DateTime, nullable = False)
-    louttime = db.Column(db.DateTime, nullable = False)
+    louttime = db.Column(db.DateTime, nullable = True)
     username = db.Column(db.String(20), nullable = False)
 
     def __repr__(self):
