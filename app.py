@@ -125,7 +125,7 @@ def login():
                         session['role'] = user.role
 
                         # Variables for class LoginHistory: lintime, louttime, username
-                        log = LoginHistory(username = username, lintime = timestamp)
+                        log = LoginHistory(username = username, lintime = timestamp, louttime = louttime)
                         db.session.add(log)
                         db.session.commit()
                         result = "success"
@@ -186,7 +186,7 @@ def logout():
     # Variables for class LoginHistory: lintime, louttime, username
     currentLog= LoginHistory.query.filter_by(lintime = currentLoginTime, username = session['user']).first()
     currentLog.logoutTime = timestamp
-    db.session.add(ccurrentLog)
+    db.session.add(currentLog)
     db.session.commit()
     
     session.clear()
