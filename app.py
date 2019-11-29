@@ -121,6 +121,7 @@ def login():
                         session['logged_in'] = True
                         session['user'] = username
                         session['lintime'] = timestamp.isoformat()
+                        session['louttime'] = 'NULL'
                         session['role'] = user.role
 
                         # Variables for class LoginHistory: lintime, louttime, username
@@ -131,9 +132,9 @@ def login():
                     else:
                         result = "Two-factor failure"
                 else:
-                    result = "Incorrect"
+                    result = "Incorrect password"
             else:
-                result = "Incorrect"
+                result = "Incorrect user"
         else:
              result = "Incorrect username, password, or 2FA format. Please make sure the format meets the requirements before proceeding."    
         
