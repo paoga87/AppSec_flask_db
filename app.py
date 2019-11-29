@@ -125,7 +125,7 @@ def login():
                         louttime =  'NULL'
 
                         # Variables for class LoginHistory: lintime, louttime, username
-                        log = LoginHistory(username = username, lintime = timestamp, louttime = louttime)
+                        log = LoginHistory(username = username, lintime = timestamp)
                         db.session.add(log)
                         db.session.commit()
                         result = "success"
