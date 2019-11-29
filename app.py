@@ -122,7 +122,6 @@ def login():
                         session['user'] = username
                         session['lintime'] = timestamp.isoformat()
                         session['role'] = user.role
-                        louttime =  'NULL'
 
                         # Variables for class LoginHistory: lintime, louttime, username
                         log = LoginHistory(username = username, lintime = timestamp)
@@ -181,7 +180,7 @@ def spell():
 @app.route('/logout')
 def logout():
     timestamp = datetime.utcnow()
-    currentLoginTime = datetime.strptime(session['loginTime'], '%Y-%m-%dT%H:%M:%S.%f')
+    currentLoginTime = datetime.strptime(session['lintime'], '%Y-%m-%dT%H:%M:%S.%f')
     
     # Variables for class LoginHistory: lintime, louttime, username
     currentLog= LoginHistory.query.filter_by(lintime = currentLoginTime, username = session['user']).first()
