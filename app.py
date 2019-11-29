@@ -121,8 +121,8 @@ def login():
                         session['logged_in'] = True
                         session['user'] = username
                         session['lintime'] = timestamp.isoformat()
-                        session['louttime'] = 'NULL'
                         session['role'] = user.role
+                        louttime =  'NULL'
 
                         # Variables for class LoginHistory: lintime, louttime, username
                         log = LoginHistory(username = username, lintime = timestamp, louttime = louttime)
