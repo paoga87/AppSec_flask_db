@@ -1,0 +1,16 @@
+sudo: false
+language: python
+python:
+  - "3.6"
+
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install python-passlib
+
+install:
+  - pip3 install -r requirements.txt
+  - pip3 install tox-travis
+  - pip3 install passlib
+
+
+script: flask run & tox
