@@ -154,7 +154,7 @@ def spell():
         cpath = os.getcwd()
 
         if request.method == 'POST':
-            outputtext = request.form['inputtext']
+            outputtext = request.form ['inputtext']
             textfile = open("./static/text.txt", "w")
             textfile.writelines(outputtext)
             textfile.close()
@@ -183,9 +183,9 @@ def logout():
     currentLoginTime = datetime.strptime(session['lintime'], '%Y-%m-%dT%H:%M:%S.%f')
     
     # Variables for class LoginHistory: lintime, louttime, username
-    currentLog = LoginHistory.query.filter_by(lintime = currentLoginTime, username = session['user']).first()
-    currentLog.logoutTime = datetime.utcnow()
-    db.session.add(currentLog)
+    currentLog= LoginHistory.query.filter_by(lintime = currentLoginTime, username = session['user']).first()
+    currentLog.logoutTime = timestamp
+    # db.session.add(currentLog)
     db.session.commit()
     
     session.clear()
