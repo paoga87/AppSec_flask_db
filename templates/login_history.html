@@ -34,10 +34,10 @@
 
                 {% for query in queries %}
                     <tr>
-                        <td><p id = login{{query.logid}}>{{ query.lid }}</p></td>
+                        <td><p id = login{{query.lid}}>{{ query.lid }}</p></td>
                         <td>{{ query.username }}</td>
-                        <td><p id = login{{query.logid}}_time>{{ query.lintime }}</p></td>
-                        <td><p id = logout{{query.logid}}_time>{{ query.louttime if (query.louttime) else 'No logout time'}}</p></td>
+                        <td><p id = login{{query.lid}}_time>{{ query.lintime }}</p></td>
+                        <td><p id = logout{{query.lid}}_time>{{ query.louttime if (query.louttime) else 'No logout time'}}</p></td>
                     </tr>
                 {% endfor %}
 
